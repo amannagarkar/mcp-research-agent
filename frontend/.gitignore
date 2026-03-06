@@ -1,0 +1,59 @@
+# Frontend React/Vite .gitignore
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+
+# Vite
+.vite/
+.cache/
+
+# Runtime
+uploads/
+tmp/
+temp/
+
+# Bundle analysis
+dist-stats.json
+
+# Misc
+.turbo/
