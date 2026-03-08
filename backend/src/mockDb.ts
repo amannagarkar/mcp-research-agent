@@ -29,8 +29,10 @@ export const mockQuery = (text: string, params?: any[]): Promise<any> => {
 export const mockDb = {
   addPaper: (paper: any) => {
     const id = uuidv4();
-    db.papers.push({ ...paper, id, created_at: new Date() });
-    return { ...paper, id, created_at: new Date() };
+    const created = { ...paper, id, created_at: new Date() };
+    db.papers.push(created);
+    console.log('[MockDB] addPaper - id=', id, 'title=', paper.title);
+    return created;
   },
 
   getPapers: () => db.papers,
@@ -46,6 +48,7 @@ export const mockDb = {
 
   deletePaper: (id: string) => {
     db.papers = db.papers.filter((p) => p.id !== id);
+    console.log('[MockDB] deletePaper - id=', id);
     return true;
   },
 
@@ -53,6 +56,7 @@ export const mockDb = {
     const paper = db.papers.find((p) => p.id === id);
     if (paper) {
       Object.assign(paper, updates, { updated_at: new Date() });
+      console.log('[MockDB] updatePaper - id=', id, 'updates=', Object.keys(updates || {}).join(','));
     }
     return paper;
   },

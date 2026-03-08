@@ -12,19 +12,25 @@ const upload = multer({ dest: 'uploads/' });
  */
 router.post('/upload', upload.single('file'), async (req: Request, res: Response) => {
   try {
+    console.log('[API] POST /api/papers/upload - entry');
     if (!req.file) {
+      console.log('[API] POST /api/papers/upload - no file provided');
       return res.status(400).json({ error: 'No file provided' });
     }
+
+    console.log(`[API] uploaded file: originalname=${req.file.originalname} filename=${req.file.filename} path=${req.file.path} size=${req.file.size}`);
 
     const { title, authors, category, tags } = req.body;
 
     // Calculate file hash for duplicate detection
-    const fileContent = require('fs').readFileSync(req.file.path);
-    const fileHash = PaperService.calculateFileHash(fileContent);
+  const fileContent = require('fs').readFileSync(req.file.path);
+  const fileHash = PaperService.calculateFileHash(fileContent);
+  console.log(`[Flow] computed fileHash=${fileHash}`);
 
     // Check if paper already exists
     const existingPaper = await PaperService.paperExists(fileHash);
     if (existingPaper) {
+      console.log(`[Flow] duplicate detected - existing paper id=${existingPaper.id}`);
       return res.status(409).json({ 
         error: 'Paper already exists in database',
         paperId: existingPaper.id 
@@ -33,18 +39,22 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
 
     // Send to MCP server for parsing and analysis
     const absolutePath = require('path').resolve(req.file.path);
+    console.log(`[Flow] sending parse request to MCP for file=${absolutePath}`);
     const mcpResponse = await axios.post('http://localhost:3001/api/parse-paper', {
       filePath: absolutePath,
       fileName: req.file.filename,
     });
 
     const parsedData = mcpResponse.data;
+    console.log(`[Flow] MCP parse response received - keys=${Object.keys(parsedData).join(',')}`);
 
     // Optionally call MCP summarizer/categorizer for stronger summary / categories
     const mcpClient = require('../services/mcpClient');
     let mcpResult = null;
     try {
+      console.log('[Flow] calling MCP summarizer for enhanced summary');
       mcpResult = await mcpClient.summarizeViaMCP(parsedData.full_text || parsedData.abstract || '', parsedData.title || title);
+      console.log('[Flow] MCP summarizer result:', mcpResult && mcpResult.summary ? `${mcpResult.summary.substring(0, 200)}...` : 'no summary');
     } catch (mcpErr: any) {
       console.warn('MCP summarize failed, falling back to parsed data summary:', mcpErr && mcpErr.message ? mcpErr.message : mcpErr);
     }
@@ -71,13 +81,18 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
       tags ? JSON.parse(tags) : mergedCategories
     );
 
+    console.log(`[DB] created paper id=${paper.id} title=${paper.title}`);
+
     // Find similar papers
+    console.log(`[Flow] requesting similar papers for paperId=${paper.id}`);
     const similarPapers = await axios.post('http://localhost:3001/api/find-similar', {
       paperId: paper.id,
       title: paper.title,
       abstract: paper.abstract,
       tags: paper.key_points,
     });
+
+    console.log(`[Flow] similar papers returned: count=${(similarPapers.data && similarPapers.data.similar_papers) ? similarPapers.data.similar_papers.length : 0}`);
 
     return res.status(201).json({
       paper,
@@ -95,6 +110,7 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
  */
 router.get('/:id', async (req: Request, res: Response) => {
   try {
+    console.log(`[API] GET /api/papers/${req.params.id}`);
     const paper = await PaperService.getPaperById(req.params.id);
     return res.json(paper);
   } catch (error: any) {
@@ -110,7 +126,7 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 50;
     const offset = parseInt(req.query.offset as string) || 0;
-
+    console.log(`[API] GET /api/papers - limit=${limit} offset=${offset}`);
     const papers = await PaperService.getAllPapers(limit, offset);
     return res.json(papers);
   } catch (error: any) {
@@ -126,6 +142,7 @@ router.post('/search', async (req: Request, res: Response) => {
   try {
     const { query, limit } = req.body;
 
+    console.log(`[API] POST /api/papers/search - query='${query}' limit=${limit}`);
     // If query is empty, return all papers
     if (!query || query.trim() === '') {
       const allPapers = await PaperService.getAllPapers(limit || 20, 0);

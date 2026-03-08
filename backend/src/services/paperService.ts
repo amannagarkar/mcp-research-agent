@@ -24,23 +24,28 @@ export interface Paper {
 
 export class PaperService {
   static async createPaper(paperData: Partial<Paper>, authors?: string[], tags?: string[]): Promise<Paper> {
+    console.log('[Service] createPaper - title=', paperData.title, 'authors=', authors?.length || 0, 'tags=', tags?.length || 0);
     const paper = mockDb.addPaper({
       ...paperData,
       authors: authors || [],
       tags: tags || [],
     });
+    console.log('[Service] createPaper - created id=', paper.id);
     return paper;
   }
 
   static async getPaperById(paperId: string): Promise<Paper> {
+    console.log('[Service] getPaperById - id=', paperId);
     const paper = mockDb.getPaperById(paperId);
     if (!paper) {
+      console.log('[Service] getPaperById - not found id=', paperId);
       throw new Error('Paper not found');
     }
     return paper;
   }
 
   static async searchPapers(query_text: string, limit: number = 20): Promise<Paper[]> {
+    console.log('[Service] searchPapers - query=', query_text, 'limit=', limit);
     return mockDb.searchPapers(query_text).slice(0, limit);
   }
 
@@ -53,15 +58,21 @@ export class PaperService {
   }
 
   static async updatePaper(paperId: string, updates: Partial<Paper>): Promise<Paper> {
+    console.log('[Service] updatePaper - id=', paperId, 'updates=', Object.keys(updates || {}).join(','));
     const paper = mockDb.updatePaper(paperId, updates);
     if (!paper) {
+      console.log('[Service] updatePaper - not found id=', paperId);
       throw new Error('Paper not found');
     }
+    console.log('[Service] updatePaper - updated id=', paperId);
     return paper;
   }
 
   static async deletePaper(paperId: string): Promise<boolean> {
-    return mockDb.deletePaper(paperId);
+    console.log('[Service] deletePaper - id=', paperId);
+    const ok = mockDb.deletePaper(paperId);
+    console.log('[Service] deletePaper - result=', ok);
+    return ok;
   }
 
   static async addAuthorToPaper(paperId: string, authorName: string, order: number): Promise<void> {
@@ -83,16 +94,21 @@ export class PaperService {
   }
 
   static async getSimilarPapers(paperId: string, limit: number = 10): Promise<Paper[]> {
+    console.log('[Service] getSimilarPapers - id=', paperId, 'limit=', limit);
     return mockDb.getSimilarPapers(paperId, limit);
   }
 
   static async getAllPapers(limit: number = 50, offset: number = 0): Promise<Paper[]> {
+    console.log('[Service] getAllPapers - offset=', offset, 'limit=', limit);
     return mockDb.getPapers().slice(offset, offset + limit);
   }
 
   static async paperExists(fileHash: string): Promise<Paper | null> {
+    console.log('[Service] paperExists - fileHash=', fileHash);
     const papers = mockDb.getPapers();
-    return papers.find((p) => p.file_hash === fileHash) || null;
+    const found = papers.find((p) => p.file_hash === fileHash) || null;
+    console.log('[Service] paperExists - found=', !!found);
+    return found;
   }
 
   static calculateFileHash(content: Buffer | string): string {

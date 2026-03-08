@@ -13,6 +13,16 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Simple request logger to show flow of incoming requests
+app.use((req, res, next) => {
+  try {
+    console.log(`[Request] ${req.method} ${req.path} - query=${JSON.stringify(req.query)} body=${JSON.stringify(req.body)}`);
+  } catch (e) {
+    console.log('[Request] could not stringify request body');
+  }
+  next();
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'Backend API is running' });
